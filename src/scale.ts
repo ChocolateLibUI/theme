@@ -1,17 +1,18 @@
-import { ValueLimited } from "@chocolatelib/value";
 import { documents } from "./document";
+import { settings } from "./shared";
 
-/** Minimum ui scale */
-export const minScale = 0.2;
-/** Maximum ui scale */
-export const maxScale = 4;
-
-let actualScale = 16;
+//Package exports
 /** Ui scale */
-export let scale = new ValueLimited(1, (val) => {
-    return Math.min(Math.max(val, minScale), maxScale);
-})
+export let scale = settings.makeNumberSetting('scale', 'UI Scale', 'The scale of the UI', 1, 0.2, 4);
+
+//Internal exports
+/**This applies the current touch state to a document*/
+export let initScale = async (docu: Document) => {
+    applyScale(docu);
+}
+
 //Adds listener for scale change
+let actualScale = 16;
 scale.addListener((val) => {
     actualScale = val * 16;
     for (let i = 0; i < documents.length; i++) {
@@ -24,7 +25,3 @@ let applyScale = (docu: Document) => {
     docu.documentElement.style.fontSize = actualScale + 'px';
 }
 
-/**This applies the current touch state to a document*/
-export let initScale = async (docu: Document) => {
-    applyScale(docu);
-}

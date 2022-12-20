@@ -1,5 +1,5 @@
 import "./index.css";
-import { autoTheme, autoTouch, AutoTouchMode, registerVariable, scale, theme, themes, touch } from "../src"
+import { autoTheme, autoTouch, AutoTouchMode, registerVariable, scale, theme, touch } from "../src"
 
 registerVariable('test', 'blue', 'black');
 registerVariable('test2', 'test', 'asdf');
@@ -13,16 +13,15 @@ let autoON = document.body.appendChild(document.createElement('button'));
 autoON.innerHTML = 'Turn Auto Theme On';
 autoON.addEventListener('click', () => { autoTheme.set = true; });
 
-(async () => {
-    let themesArray = await themes.get;
-    for (let i = 0; i < themesArray.length; i++) {
-        let test = document.body.appendChild(document.createElement('button'));
-        test.innerHTML = themesArray[i].name;
-        test.addEventListener('click', () => {
-            theme.set = themesArray[i].name;
-        })
-    }
-})()
+
+let themes = theme.enums;
+for (const key in themes) {
+    let test = document.body.appendChild(document.createElement('button'));
+    test.innerHTML = key;
+    test.addEventListener('click', () => {
+        theme.set = key;
+    })
+}
 
 let toggleTouch = document.body.appendChild(document.createElement('button'));
 toggleTouch.innerHTML = 'Toggle Touch';

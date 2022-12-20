@@ -21,7 +21,7 @@
     "prepublishOnly": "yarn run test && yarn run build:lib && yarn run build:pages"
   },
   "devDependencies": {
-    "cypress": "^11.2.0",
+    "cypress": "12.1.0",
     "cypress-vite": "^1.2.1",
     "start-server-and-test": "^1.14.0",
     "tslib": "^2.4.1",
@@ -40,6 +40,7 @@
   },
   "homepage": "https://github.com/ChocolateLibUI/theme#readme",
   "dependencies": {
-    "@chocolatelib/value": "^0.0.5"
+    "@chocolatelib/value": "^0.0.10",
+    "@chocolatelibui/settings": "^0.0.5"
   }
 }

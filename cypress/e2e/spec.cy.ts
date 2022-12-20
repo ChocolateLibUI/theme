@@ -1,14 +1,17 @@
 /// <reference types="cypress" />
-import { index } from "../../src"
+import { touch, scale } from "../../src"
 
-describe('empty spec', () => {
-  it('true', () => {
-    expect('true').to.equal('true');
+describe('Tests', async () => {
+  it('touch mode', () => {
+    touch.set = true;
+    expect(touch.get).to.equal(true);
+    expect(document.documentElement.classList.contains('touch')).to.equal(true);
+    touch.set = false;
+    expect(touch.get).to.equal(false);
+    expect(document.documentElement.classList.contains('touch')).to.equal(false);
   })
-  it('test', () => {
-    expect(index).to.equal('test');
-  })
-  it('web', () => {
-    cy.visit('http://localhost:999')
+  it('scaling', async () => {
+
+
   })
 })

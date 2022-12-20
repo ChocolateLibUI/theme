@@ -1,13 +1,6 @@
-import { Value } from "@chocolatelib/value";
+import { EnumList } from "@chocolatelib/value";
 import { documents } from "./document";
-
-/**State of touch mode*/
-export let touch = new Value<boolean>(false);
-touch.addListener((val) => {
-    for (let i = 0; i < documents.length; i++) {
-        applyTouch(documents[i], val);
-    }
-})
+import { settings } from "./shared";
 
 /**Possible modes for auto touch mode*/
 export enum AutoTouchMode {
@@ -19,14 +12,37 @@ export enum AutoTouchMode {
     every = 'every'
 }
 
-/**State of automatic touch mode change*/
-export let autoTouch = new Value(AutoTouchMode.every);
-
-/**This applies the current touch state to a document*/
-export let initTouch = async (docu: Document) => {
-    applyTouch(docu, await touch.get);
-    applyAuto(docu, await autoTouch.get);
+let autoTouchMode: EnumList = {
+    [AutoTouchMode.off]: { name: 'Off', description: "Don't set touch mode automatically" },
+    [AutoTouchMode.first]: { name: 'First Interaction', description: "Change touch mode on first ui interaction" },
+    [AutoTouchMode.every]: { name: 'Every Interaction', description: "Change touch mode on every ui interaction" }
 }
+
+//Package Exports
+/**State of touch mode*/
+export let touch = settings.makeBooleanSetting('touch', 'Touch Mode', 'Toggle between touch friendly or mouse friendly UI', false);
+/**State of automatic touch mode change*/
+export let autoTouch = settings.makeStringSetting('autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoTouchMode.every, autoTouchMode)
+
+//Internal exports
+/**This applies the current touch state to a document*/
+export let initTouch = (docu: Document) => {
+    applyTouch(docu, <boolean>touch.get);
+    applyAuto(docu, <AutoTouchMode>autoTouch.get);
+}
+
+//Updates all registered documents of touch mode change
+touch.addListener((val) => {
+    for (let i = 0; i < documents.length; i++) {
+        applyTouch(documents[i], val);
+    }
+});
+//Updates documents auto mode
+autoTouch.addListener((val) => {
+    for (let i = 0; i < documents.length; i++) {
+        applyAuto(documents[i], <AutoTouchMode>val);
+    }
+})
 
 /**This applies the current touch state to a document*/
 let applyTouch = (docu: Document, touch: boolean) => {
@@ -37,7 +53,7 @@ let applyTouch = (docu: Document, touch: boolean) => {
     }
 }
 
-/**Function to detect touch mode change */
+/**Function to detect touch mode change*/
 let autoTouchListener = (event: PointerEvent) => {
     switch (event.pointerType) {
         case 'touch':
@@ -68,8 +84,3 @@ let applyAuto = (docu: Document, auto: AutoTouchMode) => {
             break;
     }
 }
-autoTouch.addListener((val) => {
-    for (let i = 0; i < documents.length; i++) {
-        applyAuto(documents[i], val);
-    }
-})

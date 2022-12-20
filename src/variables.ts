@@ -1,37 +1,24 @@
-import { Value, ValueArray, ValueLimited } from "@chocolatelib/value"
+import { EnumList } from "@chocolatelib/value"
 import { documents } from "./document";
-
-import { name } from "../package.json"
-console.log(name);
-
+import { settings } from "./shared";
 
 /**Default themes*/
-export enum DefaultThemes {
-    light = 'Light',
-    dark = 'Dark'
+enum DefaultThemes {
+    light = 'light',
+    dark = 'dark'
 }
 
+/**Default themes info */
+let themes: EnumList = {
+    [DefaultThemes.light]: { name: 'Light', description: "Don't set touch mode automatically" },
+    [DefaultThemes.dark]: { name: 'Dark', description: "Change touch mode on first ui interaction" },
+}
+
+//Package exports
 /**State of themes*/
-export let theme = new ValueLimited<string>(DefaultThemes.light, (val) => {
-    if (val in themeStorage) {
-        return val;
-    }
-    return
-});
-
-interface ThemeInfo {
-    name: string
-    icon?: SVGSVGElement
-}
-
-/**List of available themes*/
-export let themes = new ValueArray<ThemeInfo>([
-    { name: DefaultThemes.light },
-    { name: DefaultThemes.dark }
-]);
-
+export let theme = settings.makeStringSetting('theme', 'Theme', 'Color theme of UI', (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DefaultThemes.dark : DefaultThemes.light), themes);
 /**State of automatic theme change*/
-export let autoTheme = new Value(true);
+export let autoTheme = settings.makeBooleanSetting('autoTheme', 'Automatic Theme Change', 'Toggle for automatically changing theme', true);
 
 /**This lets one add an variable to the theme engine
  * variable are added to the document root CSS ass --variables
@@ -50,6 +37,7 @@ export let registerVariable = async (name: string, light: ThemeValue, dark: Them
     }
 }
 
+//Internal Exports
 /**This applies the current theme to a document*/
 export let applyTheme = (docu: Document, theme: string) => {
     let style = docu.documentElement.style;
@@ -58,6 +46,13 @@ export let applyTheme = (docu: Document, theme: string) => {
         style.setProperty('--' + key, them[key]);
     }
 }
+
+/**Listener for theme change*/
+theme.addListener((value) => {
+    for (let i = 0; i < documents.length; i++) {
+        applyTheme(documents[i], value);
+    }
+});
 
 type ThemeValue = string;
 
@@ -75,62 +70,9 @@ let themeStorage: Themes = {
     [DefaultThemes.dark]: {},
 };
 
-/**Listener for theme change*/
-theme.addListener((value) => {
-    localStorage.theme = value;
-    for (let i = 0; i < documents.length; i++) {
-        applyTheme(documents[i], value);
-    }
-});
-
-/**Loading saved theme from local storage*/
-let storedTheme = <DefaultThemes | undefined>localStorage.theme;
-if (storedTheme && storedTheme in themeStorage) {
-    theme.set = storedTheme;
-}
-
-/**Custom themes are retrieved from localstorage*/
-let storedThemes = <string | undefined>localStorage.customThemes
-if (storedThemes) {
-    let storThemes = JSON.parse(storedThemes);
-    let customKeys = Object.keys(storThemes);
-    for (let i = 0, m = customKeys.length; i < m; i++) {
-        if (!(customKeys[i] in themeStorage)) {
-            themeStorage[customKeys[i]] = {}
-        };
-        let cusTheKeys = Object.keys(storThemes[customKeys[i]]);
-        for (let y = 0, m = cusTheKeys.length; y < m; y++) {
-            if (cusTheKeys[y] in themeStorage[DefaultThemes.light]) {
-                themeStorage[customKeys[i]][cusTheKeys[y]] = storThemes[customKeys[i]][cusTheKeys[y]];
-            }
-        }
-    }
-}
-
-/**Custom themes are retrieved from localstorage*/
-let storedAutoTheme = <string | undefined>localStorage.themeAuto
-if (storedAutoTheme) {
-    autoTheme.set = Boolean(JSON.parse(storedAutoTheme));
-}
-
 //Sets up automatic theme change based on operating system
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async (e) => {
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     if (autoTheme.get) {
         theme.set = (e.matches ? DefaultThemes.dark : DefaultThemes.light);
     }
 });
-autoTheme.addListener((val) => {
-    localStorage.themeAuto = val;
-})
-
-//Loading saved theme from local storage
-if (!storedTheme) {
-    (async () => {
-        await new Promise<void>((a) => a());
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            theme.set = DefaultThemes.dark;
-        } else {
-            theme.set = DefaultThemes.light;
-        }
-    })();
-}
