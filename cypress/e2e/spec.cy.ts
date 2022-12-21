@@ -1,17 +1,20 @@
 /// <reference types="cypress" />
-import { touch, scale } from "../../src"
 
 describe('Tests', async () => {
   it('touch mode', () => {
-    touch.set = true;
-    expect(touch.get).to.equal(true);
-    expect(document.documentElement.classList.contains('touch')).to.equal(true);
-    touch.set = false;
-    expect(touch.get).to.equal(false);
-    expect(document.documentElement.classList.contains('touch')).to.equal(false);
+    cy.visit('http://localhost:999');
+    cy.get('#TouchBox').invoke('outerWidth').should('equal', 48);
+    cy.get('#TouchBox').invoke('outerHeight').should('equal', 32);
+    cy.get('#TouchBox').click();
+    cy.get('#TouchBox').invoke('outerWidth').should('equal', 64);
+    cy.get('#TouchBox').invoke('outerHeight').should('equal', 48);
   })
   it('scaling', async () => {
-
-
+    cy.visit('http://localhost:999');
+    cy.get('#ScaleBox').invoke('outerWidth').should('equal', 48);
+    cy.get('#ScaleBox').invoke('outerHeight').should('equal', 32);
+    cy.get('#ScaleBox').click();
+    cy.get('#ScaleBox').invoke('outerWidth').should('equal', 96);
+    cy.get('#ScaleBox').invoke('outerHeight').should('equal', 64);
   })
 })

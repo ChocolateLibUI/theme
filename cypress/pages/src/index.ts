@@ -1,7 +1,15 @@
-import { touch } from "../../../src"
 
-touch.set = true;
-await new Promise((a) => { setTimeout(a, 1000) });
+import "./index.css";
+import { touch, scale } from "../../../src"
 
-document.body.appendChild(document.createElement('div')).innerHTML = 'Test99'
-document.body.appendChild(document.createElement('div')).innerHTML = 'Test994'
+let touchBox = document.body.appendChild(document.createElement('div'));
+touchBox.id = touchBox.innerHTML = 'TouchBox'
+touchBox.onclick = () => {
+    touch.set = true;
+}
+
+let scaleBox = document.body.appendChild(document.createElement('div'));
+scaleBox.id = scaleBox.innerHTML = 'ScaleBox'
+scaleBox.onclick = () => {
+    scale.set = 2;
+}

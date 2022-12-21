@@ -1,6 +1,6 @@
 {
   "name": "@chocolatelibui/theme",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/types.d.ts",
@@ -41,6 +41,6 @@
   "homepage": "https://github.com/ChocolateLibUI/theme#readme",
   "dependencies": {
     "@chocolatelib/value": "^0.0.10",
-    "@chocolatelibui/settings": "^0.0.5"
+    "@chocolatelibui/settings": "^0.0.6"
   }
 }
