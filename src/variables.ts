@@ -1,6 +1,73 @@
-import { EnumList } from "@chocolatelib/value"
+import { EnumList, Value } from "@chocolatelib/value"
 import { documents } from "./document";
 import { settings } from "./shared";
+
+let bottomGroups: { [key: string]: VariableGroup } = {};
+
+/**Initialises the settings for the package
+ * @param packageName use import {name} from ("../package.json")
+ * @param name name of group formatted for user reading
+ * @param description a description of what the setting group is about*/
+export let initVariableRoot = (packageName: string, name: string, description: string) => {
+    bottomGroups[packageName] = new VariableGroup(packageName, name, description);
+    return bottomGroups[packageName];
+}
+
+/**Group of settings should never be instantiated manually use initSettings*/
+export class VariableGroup {
+    private pathID: string;
+    private variables: { [key: string]: Value<string> } = {};
+    private subGroups: { [key: string]: VariableGroup } = {};
+    readonly name: string;
+    readonly description: string;
+
+    constructor(path: string, name: string, description: string) {
+        this.pathID = path;
+        this.name = name;
+        this.description = description;
+    }
+
+    /**Makes a variable subgroup for this group
+     * @param id unique identifier for this subgroup in the parent group
+     * @param name name of group formatted for user reading
+     * @param description a description of what the setting group is about formatted for user reading*/
+    makeSubGroup(id: string, name: string, description: string) {
+        if (id in this.subGroups) {
+            console.warn('Sub group already registered ' + id);
+            return undefined
+        } else {
+            return this.subGroups[id] = new VariableGroup(this.pathID + '/' + id, name, description);
+        }
+    }
+
+    /**Makes a variable
+     * @param id unique identifier for this variable in the group
+     * @param name name of variable formatted for user reading
+     * @param description a description of what the variable is about formatted for user reading*/
+    makeVariable(id: string, name: string, description: string, defaultValue: string | Promise<string>) {
+        if (id in this.variables) {
+            throw new Error('Settings already registered ' + id);
+        }
+        let saved = localStorage[this.pathID + '/' + id];
+        if (saved) {
+            var variable = new Value<string>(JSON.parse(saved));
+        } else {
+            if (typeof defaultValue === 'string') {
+                var variable = new Value<string>(defaultValue);
+            } else {
+                var variable = new Value<string>('');
+                defaultValue.then((val) => { variable.set = val });
+            }
+        }
+        variable.info = { name, description };
+        variable.addListener((val) => {
+            for (let i = 0; i < documents.length; i++) {
+                documents[i].documentElement.style.setProperty('--' + this.pathID + '/' + id, val);
+            }
+        }, !saved)
+        return this.variables[id] = variable;
+    }
+}
 
 /**Default themes*/
 enum DefaultThemes {
