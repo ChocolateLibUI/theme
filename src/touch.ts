@@ -3,26 +3,26 @@ import { documents } from "./document";
 import { settings } from "./shared";
 
 /**Possible modes for auto touch mode*/
-export enum AutoTouchMode {
+export const enum AutoTouchMode {
     /** No automatic touch mode change*/
-    off = 'off',
+    Off = 'off',
     /** Touch mode is updated on the first document pointer interaction*/
-    first = 'first',
+    First = 'first',
     /** Touch mode is updated on every document pointer interaction*/
-    every = 'every'
+    Every = 'every'
 }
 
 let autoTouchMode: EnumList = {
-    [AutoTouchMode.off]: { name: 'Off', description: "Don't set touch mode automatically" },
-    [AutoTouchMode.first]: { name: 'First Interaction', description: "Change touch mode on first ui interaction" },
-    [AutoTouchMode.every]: { name: 'Every Interaction', description: "Change touch mode on every ui interaction" }
+    [AutoTouchMode.Off]: { name: 'Off', description: "Don't set touch mode automatically" },
+    [AutoTouchMode.First]: { name: 'First Interaction', description: "Change touch mode on first ui interaction" },
+    [AutoTouchMode.Every]: { name: 'Every Interaction', description: "Change touch mode on every ui interaction" }
 }
 
 //Package Exports
 /**State of touch mode*/
 export let touch = settings.makeBooleanSetting('touch', 'Touch Mode', 'Toggle between touch friendly or mouse friendly UI', false);
 /**State of automatic touch mode change*/
-export let autoTouch = settings.makeStringSetting('autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoTouchMode.every, autoTouchMode)
+export let autoTouch = settings.makeStringSetting('autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoTouchMode.Every, autoTouchMode)
 
 //Internal exports
 /**This applies the current touch state to a document*/
@@ -76,10 +76,10 @@ let applyAuto = (docu: Document, auto: AutoTouchMode) => {
     docu.documentElement.removeEventListener('pointerdown', autoTouchOnce);
     docu.documentElement.removeEventListener('pointerdown', autoTouchListener);
     switch (auto) {
-        case AutoTouchMode.first:
+        case AutoTouchMode.First:
             docu.documentElement.addEventListener('pointerdown', autoTouchOnce, { passive: true });
             break;
-        case AutoTouchMode.every:
+        case AutoTouchMode.Every:
             docu.documentElement.addEventListener('pointerdown', autoTouchListener, { passive: true });
             break;
     }

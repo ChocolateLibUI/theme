@@ -1,14 +1,33 @@
-import { EnumList, Value } from "@chocolatelib/value"
+import { EnumList } from "@chocolatelib/value"
 import { documents } from "./document";
 import { settings } from "./shared";
 
 let bottomGroups: { [key: string]: VariableGroup } = {};
+
+/**Default themes*/
+const enum DefaultThemes {
+    Light = 'light',
+    Dark = 'dark'
+}
+
+/**Default themes info */
+let themes: EnumList = {
+    [DefaultThemes.Light]: { name: 'Light', description: "Don't set touch mode automatically" },
+    [DefaultThemes.Dark]: { name: 'Dark', description: "Change touch mode on first ui interaction" },
+}
+
+//Package exports
+/**State of themes*/
+export let theme = settings.makeStringSetting('theme', 'Theme', 'Color theme of UI', (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DefaultThemes.Dark : DefaultThemes.Light), themes);
+/**State of automatic theme change*/
+export let autoTheme = settings.makeBooleanSetting('autoTheme', 'Automatic Theme Change', 'Toggle for automatically changing theme', true);
 
 /**Initialises the settings for the package
  * @param packageName use import {name} from ("../package.json")
  * @param name name of group formatted for user reading
  * @param description a description of what the setting group is about*/
 export let initVariableRoot = (packageName: string, name: string, description: string) => {
+    // @ts-expect-error 
     bottomGroups[packageName] = new VariableGroup(packageName, name, description);
     return bottomGroups[packageName];
 }
@@ -16,12 +35,12 @@ export let initVariableRoot = (packageName: string, name: string, description: s
 /**Group of settings should never be instantiated manually use initSettings*/
 export class VariableGroup {
     private pathID: string;
-    private variables: { [key: string]: Value<string> } = {};
+    private variables: { [key: string]: { name: string, desc: string, vars: { [key: string]: string } } } = {};
     private subGroups: { [key: string]: VariableGroup } = {};
     readonly name: string;
     readonly description: string;
 
-    constructor(path: string, name: string, description: string) {
+    private constructor(path: string, name: string, description: string) {
         this.pathID = path;
         this.name = name;
         this.description = description;
@@ -43,74 +62,66 @@ export class VariableGroup {
     /**Makes a variable
      * @param id unique identifier for this variable in the group
      * @param name name of variable formatted for user reading
-     * @param description a description of what the variable is about formatted for user reading*/
-    makeVariable(id: string, name: string, description: string, defaultValue: string | Promise<string>) {
+     * @param description a description of what the variable is about formatted for user reading
+     * @param light value for light mode
+     * @param dark value for dark mode
+     * @param type type of variable for editing*/
+    makeVariable<K extends keyof VariableType>(id: string, name: string, description: string, light: string, dark: string, type: K, typeParams: VariableType[K]) {
         if (id in this.variables) {
             throw new Error('Settings already registered ' + id);
         }
-        let saved = localStorage[this.pathID + '/' + id];
-        if (saved) {
-            var variable = new Value<string>(JSON.parse(saved));
-        } else {
-            if (typeof defaultValue === 'string') {
-                var variable = new Value<string>(defaultValue);
-            } else {
-                var variable = new Value<string>('');
-                defaultValue.then((val) => { variable.set = val });
-            }
-        }
-        variable.info = { name, description };
-        variable.addListener((val) => {
-            for (let i = 0; i < documents.length; i++) {
-                documents[i].documentElement.style.setProperty('--' + this.pathID + '/' + id, val);
-            }
-        }, !saved)
-        return this.variables[id] = variable;
-    }
-}
-
-/**Default themes*/
-enum DefaultThemes {
-    light = 'light',
-    dark = 'dark'
-}
-
-/**Default themes info */
-let themes: EnumList = {
-    [DefaultThemes.light]: { name: 'Light', description: "Don't set touch mode automatically" },
-    [DefaultThemes.dark]: { name: 'Dark', description: "Change touch mode on first ui interaction" },
-}
-
-//Package exports
-/**State of themes*/
-export let theme = settings.makeStringSetting('theme', 'Theme', 'Color theme of UI', (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DefaultThemes.dark : DefaultThemes.light), themes);
-/**State of automatic theme change*/
-export let autoTheme = settings.makeBooleanSetting('autoTheme', 'Automatic Theme Change', 'Toggle for automatically changing theme', true);
-
-/**This lets one add an variable to the theme engine
- * variable are added to the document root CSS ass --variables
- * @param name name of variable
- * @param light default value in day mode
- * @param dark defult value in night mode*/
-export let registerVariable = async (name: string, light: ThemeValue, dark: ThemeValue) => {
-    if (name in themeStorage[DefaultThemes.light]) {
-        console.warn('Theme variable already registered ' + name);
-    } else {
-        themeStorage[DefaultThemes.light][name] = light;
-        themeStorage[DefaultThemes.dark][name] = dark;
+        type;
+        typeParams;
+        let key = '--' + this.pathID + '/' + id;
+        let variable = this.variables[key] = { name, desc: description, vars: { [DefaultThemes.Light]: light, [DefaultThemes.Dark]: dark } }
         for (let i = 0; i < documents.length; i++) {
-            documents[i].documentElement.style.setProperty('--' + name, themeStorage[await theme.get][name]);
+            // @ts-expect-error 
+            documents[i].documentElement.style.setProperty(key, variable.vars[(<string>theme.get)]);
+        }
+        return;
+    }
+
+    /**Applies the groups 
+     * @param style unique identifier for this variable in the group
+     * @param theme name of variable formatted for user reading*/
+    applyThemes(style: CSSStyleDeclaration, theme: string) {
+        for (const key in this.variables) {
+            style.setProperty(key, this.variables[key].vars[theme]);
+        }
+        for (const key in this.subGroups) {
+            this.subGroups[key].applyThemes(style, theme);
         }
     }
+}
+
+/**Defines the parameters for a variable type */
+interface VariableType {
+    /**Text variable,  */
+    String: undefined,
+    /**Color variable */
+    Color: undefined,
+    /**Time variable */
+    Time: {
+        /**Minimum time in milliseconds */
+        min: number,
+        /**Maximum time in milliseconds */
+        max: number
+    } | undefined,
+    /**Angle variable */
+    Angle: { min: number, max: number } | undefined,
+    /**Length variable*/
+    Length: { min: number, max: number } | undefined,
+    /**Number variable*/
+    Number: { min: number, max: number } | undefined,
+    /**Ratio*/
+    Ratio: { width: { min: number, max: number }, height: { min: number, max: number } } | number | undefined,
 }
 
 //Internal Exports
 /**This applies the current theme to a document*/
 export let applyTheme = (docu: Document, theme: string) => {
-    let style = docu.documentElement.style;
-    let them = themeStorage[theme];
-    for (let key in them) {
-        style.setProperty('--' + key, them[key]);
+    for (const key in bottomGroups) {
+        bottomGroups[key].applyThemes(docu.documentElement.style, theme)
     }
 }
 
@@ -121,25 +132,10 @@ theme.addListener((value) => {
     }
 });
 
-type ThemeValue = string;
-
-interface Theme {
-    [k: string]: ThemeValue
-}
-
-interface Themes {
-    [k: string]: Theme
-}
-
-/**Storage of themes*/
-let themeStorage: Themes = {
-    [DefaultThemes.light]: {},
-    [DefaultThemes.dark]: {},
-};
-
 //Sets up automatic theme change based on operating system
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     if (autoTheme.get) {
-        theme.set = (e.matches ? DefaultThemes.dark : DefaultThemes.light);
+        theme.set = (e.matches ? DefaultThemes.Dark : DefaultThemes.Light);
     }
 });
+

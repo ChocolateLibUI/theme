@@ -1,10 +1,10 @@
 import "./index.css";
-import { autoTheme, autoTouch, AutoTouchMode, registerVariable, scale, theme, touch } from "../src"
+import { name } from "../package.json"
+import { autoTheme, autoTouch, AutoTouchMode, initVariableRoot, scale, theme, touch } from "../src"
 
-registerVariable('test', 'blue', 'black');
-registerVariable('test2', 'test', 'asdf');
-
-document.body.style.backgroundColor = 'var(--test)';
+let varGroup = initVariableRoot(name, 'TestVars', 'TestDescription');
+varGroup.makeVariable('test', 'Test Name', 'Test Description', 'blue', 'black', 'Angle', undefined)
+varGroup.makeVariable('test2', 'Test 2 Name', 'Test 2 Description', 'test', 'asdf', 'Number', { min: 0, max: 1 })
 
 let autoOff = document.body.appendChild(document.createElement('button'));
 autoOff.innerHTML = 'Turn Auto Theme Off';
@@ -30,10 +30,10 @@ toggleTouch.addEventListener('click', async () => {
 });
 
 let autoTouchSel = document.body.appendChild(document.createElement('select'));
-Object.values(AutoTouchMode).forEach((key) => {
+for (const key in autoTouch.enums) {
     let option = autoTouchSel.appendChild(document.createElement('option'));
     option.innerHTML = key;
-})
+}
 autoTouchSel.addEventListener('change', async (e) => {
     autoTouch.set = <AutoTouchMode>(<HTMLSelectElement>e.currentTarget).selectedOptions[0].innerHTML;
 });
