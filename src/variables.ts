@@ -52,8 +52,7 @@ export class VariableGroup {
      * @param description a description of what the setting group is about formatted for user reading*/
     makeSubGroup(id: string, name: string, description: string) {
         if (id in this.subGroups) {
-            console.warn('Sub group already registered ' + id);
-            return undefined
+            throw new Error('Sub group already registered ' + id);
         } else {
             return this.subGroups[id] = new VariableGroup(this.pathID + '/' + id, name, description);
         }
