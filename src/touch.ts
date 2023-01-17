@@ -1,6 +1,6 @@
 import { EnumList } from "@chocolatelib/value";
-import { documents } from "./document";
 import { settings } from "./shared";
+import { events, forDocuments } from "@chocolatelibui/document"
 
 /**Possible modes for auto touch mode*/
 export const enum AutoTouchMode {
@@ -18,30 +18,22 @@ let autoTouchMode: EnumList = {
     [AutoTouchMode.Every]: { name: 'Every Interaction', description: "Change touch mode on every ui interaction" }
 }
 
-//Package Exports
 /**State of touch mode*/
 export let touch = settings.makeBooleanSetting('touch', 'Touch Mode', 'Toggle between touch friendly or mouse friendly UI', false);
 /**State of automatic touch mode change*/
 export let autoTouch = settings.makeStringSetting('autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoTouchMode.Every, autoTouchMode)
 
-//Internal exports
-/**This applies the current touch state to a document*/
-export let initTouch = (docu: Document) => {
-    applyTouch(docu, <boolean>touch.get);
-    applyAuto(docu, <AutoTouchMode>autoTouch.get);
-}
-
 //Updates all registered documents of touch mode change
 touch.addListener((val) => {
-    for (let i = 0; i < documents.length; i++) {
-        applyTouch(documents[i], val);
-    }
+    forDocuments((doc) => {
+        applyTouch(doc, val);
+    });
 });
 //Updates documents auto mode
 autoTouch.addListener((val) => {
-    for (let i = 0; i < documents.length; i++) {
-        applyAuto(documents[i], <AutoTouchMode>val);
-    }
+    forDocuments((doc) => {
+        applyAuto(doc, <AutoTouchMode>val);
+    });
 })
 
 /**This applies the current touch state to a document*/
@@ -68,9 +60,9 @@ let autoTouchListener = (event: PointerEvent) => {
 }
 let autoTouchOnce = (ev: PointerEvent) => {
     autoTouchListener(ev);
-    for (let i = 0; i < documents.length; i++) {
-        documents[i].documentElement.removeEventListener('pointerdown', autoTouchOnce);
-    }
+    forDocuments((doc) => {
+        doc.documentElement.removeEventListener('pointerdown', autoTouchOnce);
+    });
 }
 let applyAuto = (docu: Document, auto: AutoTouchMode) => {
     docu.documentElement.removeEventListener('pointerdown', autoTouchOnce);
@@ -84,3 +76,12 @@ let applyAuto = (docu: Document, auto: AutoTouchMode) => {
             break;
     }
 }
+
+events.on('documentAdded', (e) => {
+    applyTouch(e.data, <boolean>touch.get);
+    applyAuto(e.data, <AutoTouchMode>autoTouch.get);
+})
+forDocuments((doc) => {
+    applyTouch(doc, <boolean>touch.get);
+    applyAuto(doc, <AutoTouchMode>autoTouch.get);
+});

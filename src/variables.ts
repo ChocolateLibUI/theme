@@ -1,6 +1,6 @@
 import { EnumList } from "@chocolatelib/value"
-import { documents } from "./document";
 import { settings } from "./shared";
+import { events, forDocuments } from "@chocolatelibui/document"
 
 let bottomGroups: { [key: string]: VariableGroup } = {};
 
@@ -16,7 +16,6 @@ let themes: EnumList = {
     [DefaultThemes.Dark]: { name: 'Dark', description: "Change touch mode on first ui interaction" },
 }
 
-//Package exports
 /**State of themes*/
 export let theme = settings.makeStringSetting('theme', 'Theme', 'Color theme of UI', (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DefaultThemes.Dark : DefaultThemes.Light), themes);
 /**State of automatic theme change*/
@@ -73,10 +72,10 @@ export class VariableGroup {
         typeParams;
         let key = '--' + this.pathID + '/' + id;
         let variable = this.variables[key] = { name, desc: description, vars: { [DefaultThemes.Light]: light, [DefaultThemes.Dark]: dark } }
-        for (let i = 0; i < documents.length; i++) {
+        forDocuments((doc) => {
             // @ts-expect-error 
-            documents[i].documentElement.style.setProperty(key, variable.vars[(<string>theme.get)]);
-        }
+            doc.documentElement.style.setProperty(key, variable.vars[(<string>theme.get)]);
+        });
         return;
     }
 
@@ -116,9 +115,8 @@ interface VariableType {
     Ratio: { width: { min: number, max: number }, height: { min: number, max: number } } | number | undefined,
 }
 
-//Internal Exports
 /**This applies the current theme to a document*/
-export let applyTheme = (docu: Document, theme: string) => {
+let applyTheme = (docu: Document, theme: string) => {
     for (const key in bottomGroups) {
         bottomGroups[key].applyThemes(docu.documentElement.style, theme)
     }
@@ -126,9 +124,9 @@ export let applyTheme = (docu: Document, theme: string) => {
 
 /**Listener for theme change*/
 theme.addListener((value) => {
-    for (let i = 0; i < documents.length; i++) {
-        applyTheme(documents[i], value);
-    }
+    forDocuments((doc) => {
+        applyTheme(doc, value);
+    });
 });
 
 //Sets up automatic theme change based on operating system
@@ -138,3 +136,9 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
     }
 });
 
+events.on('documentAdded', (e) => {
+    applyTheme(e.data, <string>theme.get);
+})
+forDocuments((doc) => {
+    applyTheme(doc, <string>theme.get);
+});
