@@ -12,10 +12,10 @@ scale.addListener((val) => {
     forDocuments((doc) => {
         doc.documentElement.style.fontSize = actualScale + 'px';
     });
-})
+});
 events.on('documentAdded', (e) => {
     e.data.documentElement.style.fontSize = actualScale + 'px';
-})
+});
 forDocuments((doc) => {
     doc.documentElement.style.fontSize = actualScale + 'px';
 });
