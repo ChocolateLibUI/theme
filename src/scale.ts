@@ -12,10 +12,19 @@ scale.addListener((val) => {
     forDocuments((doc) => {
         doc.documentElement.style.fontSize = actualScale + 'px';
     });
-})
+});
 events.on('documentAdded', (e) => {
     e.data.documentElement.style.fontSize = actualScale + 'px';
-})
+});
 forDocuments((doc) => {
     doc.documentElement.style.fontSize = actualScale + 'px';
 });
+
+/**Converts the given rems to pixels */
+export let remToPx = (rem: number) => {
+    return rem * actualScale;
+}
+/**Converts the given pixels to rems */
+export let pxToRem = (px: number) => {
+    return px / actualScale;
+}
