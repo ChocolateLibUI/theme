@@ -69,10 +69,10 @@ let applyAuto = (docu: Document, auto: AutoTouchMode) => {
     docu.documentElement.removeEventListener('pointerdown', autoTouchListener);
     switch (auto) {
         case AutoTouchMode.First:
-            docu.documentElement.addEventListener('pointerdown', autoTouchOnce, { passive: true });
+            docu.documentElement.addEventListener('pointerdown', autoTouchOnce, { capture: true, });
             break;
         case AutoTouchMode.Every:
-            docu.documentElement.addEventListener('pointerdown', autoTouchListener, { passive: true });
+            docu.documentElement.addEventListener('pointerdown', autoTouchListener, { capture: true });
             break;
     }
 }
