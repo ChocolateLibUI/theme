@@ -16,5 +16,8 @@ describe('Tests', async () => {
     cy.get('#ScaleBox').click();
     cy.get('#ScaleBox').invoke('outerWidth').should('equal', 96);
     cy.get('#ScaleBox').invoke('outerHeight').should('equal', 64);
+    cy.reload()
+    cy.get('#ScaleBox').invoke('outerWidth').should('equal', 96);
+    cy.get('#ScaleBox').invoke('outerHeight').should('equal', 64);
   })
 })
