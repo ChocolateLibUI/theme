@@ -61,15 +61,15 @@ let autoTouchListener = (event: PointerEvent) => {
 let autoTouchOnce = (ev: PointerEvent) => {
     autoTouchListener(ev);
     forDocuments((doc) => {
-        doc.documentElement.removeEventListener('pointerdown', autoTouchOnce);
+        doc.documentElement.removeEventListener('pointerdown', autoTouchOnce, { capture: true });
     });
 }
 let applyAuto = (docu: Document, auto: AutoTouchMode) => {
-    docu.documentElement.removeEventListener('pointerdown', autoTouchOnce);
-    docu.documentElement.removeEventListener('pointerdown', autoTouchListener);
+    docu.documentElement.removeEventListener('pointerdown', autoTouchOnce, { capture: true });
+    docu.documentElement.removeEventListener('pointerdown', autoTouchListener, { capture: true });
     switch (auto) {
         case AutoTouchMode.First:
-            docu.documentElement.addEventListener('pointerdown', autoTouchOnce, { capture: true, });
+            docu.documentElement.addEventListener('pointerdown', autoTouchOnce, { capture: true });
             break;
         case AutoTouchMode.Every:
             docu.documentElement.addEventListener('pointerdown', autoTouchListener, { capture: true });
