@@ -13,11 +13,11 @@ export const enum AutoThemeMode {
     Off = 'off',
     OS = 'os',
 }
+
 let autoThemeMode: EnumList = {
     [AutoThemeMode.Off]: { name: 'Off', description: "Mouse input" },
     [AutoThemeMode.OS]: { name: 'OS Linked', description: "Pen input" },
 }
-
 let themes: EnumList = {
     [DefaultThemes.Light]: { name: 'Light', description: "Don't set touch mode automatically", icon: material_device_light_mode_rounded() },
     [DefaultThemes.Dark]: { name: 'Dark', description: "Change touch mode on first ui interaction", icon: material_device_dark_mode_rounded() },
@@ -83,11 +83,11 @@ export class Engine {
                 case InputMode.Pen: this.scale.set = await this.scalePen.get; break;
                 case InputMode.Touch: this.scale.set = await this.scaleTouch.get; break;
             }
+            this.applyInput(<InputMode>val);
         })
-        this.autoInputMode = settings.makeStringSetting(namespace + 'autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoInputMode.Every, autoInputMode)
-        this.autoInputMode.addListener((val) => {
 
-        })
+        this.autoInputMode = settings.makeStringSetting(namespace + 'autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoInputMode.Every, autoInputMode)
+        this.autoInputMode.addListener((val) => { this.applyAutoInput(<AutoInputMode>val); })
 
         this.scaleMouse = settings.makeNumberSetting(namespace + 'scaleMouse', 'UI Scale Mouse', 'The scale of the UI for mouse usage', 1, 0.5, 4, 0.1);
         this.scaleMouse.addListener((val) => { if (this.inputMode.get === InputMode.Mouse) { this.scale.set = val; } });
@@ -99,7 +99,7 @@ export class Engine {
         this.scale = new ValueLimitedNumber(1, 0.5, 4, 0.1);
         this.scale.addListener((val) => {
             this._scale = val * 16;
-            this.applyScale(this._scale);
+            this.applyScale(val);
             switch (this.inputMode.get) {
                 case InputMode.Mouse: this.scaleMouse.set = val; break;
                 case InputMode.Pen: this.scalePen.set = val; break;
@@ -107,7 +107,6 @@ export class Engine {
             }
         });
         this._scale = <number>this.scale.get * 16;
-
 
         engines.push(this);
         this._handler = documentHandler;
@@ -126,38 +125,39 @@ export class Engine {
 
     /**This applies the current theme to a document*/
     private async applyAllToDoc(doc: Document) {
-        let theme = await this.theme.get;
-        for (const key in bottomGroups)
-            bottomGroups[key].applyThemes(doc.documentElement.style, theme)
-        doc.documentElement.style.fontSize = this._scale + 'px';
-        this.applyAutoToDoc(doc);
+        this.applyThemeToDoc(doc, await this.theme.get);
+        this.applyScaleToDoc(doc, await this.scale.get);
+        this.applyAutoInputToDoc(doc, <AutoInputMode>await this.autoInputMode.get);
+        this.applyInputToDoc(doc, <InputMode>await this.inputMode.get);
     }
 
     /**This applies the current theme to a document*/
-    private applyTheme(theme: string) {
-        this._handler.forDocuments((doc) => {
-            for (const key in bottomGroups)
-                bottomGroups[key].applyThemes(doc.documentElement.style, theme)
-        });
-    }
+    private applyTheme(theme: string) { this._handler.forDocuments((doc) => { this.applyThemeToDoc(doc, theme); }); }
+    private applyThemeToDoc(doc: Document, theme: string) { for (const key in bottomGroups) bottomGroups[key].applyThemes(doc.documentElement.style, theme) }
 
     /**This applies the current scale to a document*/
-    private applyScale(scale: number) {
-        this._handler.forDocuments((doc) => {
-            doc.documentElement.style.fontSize = scale + 'px';
-        });
+    private applyScale(scale: number) { this._handler.forDocuments((doc) => { this.applyScaleToDoc(doc, scale); }); }
+    private applyScaleToDoc(doc: Document, scale: number) { doc.documentElement.style.fontSize = scale * 16 + 'px'; }
+
+    /**Auto Input Mode */
+    private applyInput(mode: InputMode) { this._handler.forDocuments((doc) => { this.applyInputToDoc(doc, mode); }); }
+    private applyInputToDoc(doc: Document, mode: InputMode) {
+        let style = doc.documentElement.style;
+        style.setProperty('--mouse', '0');
+        style.setProperty('--pen', '0');
+        style.setProperty('--touch', '0');
+        switch (mode) {
+            case InputMode.Mouse: style.setProperty('--mouse', '1'); break;
+            case InputMode.Pen: style.setProperty('--pen', '1'); break;
+            case InputMode.Touch: style.setProperty('--touch', '1'); break;
+        }
     }
 
-    private async applySingleProperty(key: string, variable: { [s: string]: string }) {
-        let theme = await this.theme.get;
-        this._handler.forDocuments((doc) => {
-            doc.documentElement.style.setProperty(key, variable[theme]);
-        });
-    }
-
-    private async applyAutoToDoc(doc: Document) {
+    /**Auto Input Mode */
+    private applyAutoInput(mode: AutoInputMode) { this._handler.forDocuments((doc) => { this.applyAutoInputToDoc(doc, mode); }); }
+    private applyAutoInputToDoc(doc: Document, mode: AutoInputMode) {
         doc.documentElement.removeEventListener('pointerdown', this._autoInputListenerEvery, { capture: true });
-        switch (await this.autoInputMode.get) {
+        switch (mode) {
             case AutoInputMode.First:
                 doc.documentElement.addEventListener('pointerdown', this._autoInputListenerEvery, { capture: true, once: true });
                 break;
@@ -165,6 +165,13 @@ export class Engine {
                 doc.documentElement.addEventListener('pointerdown', this._autoInputListenerEvery, { capture: true });
                 break;
         }
+    }
+
+    private async applySingleProperty(key: string, variable: { [s: string]: string }) {
+        let theme = await this.theme.get;
+        this._handler.forDocuments((doc) => {
+            doc.documentElement.style.setProperty(key, variable[theme]);
+        });
     }
 
     /**Converts the given rems to pixels */
