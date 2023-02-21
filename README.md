@@ -3,6 +3,8 @@ System to add Themes to application,
 
 
 # Changelog
+* ## 0.0.12
+Reworked theme engine
 * ## 0.0.11
 Updated version requirements for dependencies
 * ## 0.0.10

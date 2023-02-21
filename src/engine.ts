@@ -9,6 +9,32 @@ import { material_hardware_mouse_rounded, material_image_edit_rounded, material_
 
 let settings = initSettings(name, 'Theme/UI', 'Settings for UI elements and and color themes');
 
+export const enum ScrollbarMode {
+    THIN = 'thin',
+    MEDIUM = 'medium',
+    WIDE = 'wide',
+}
+
+let scrollbarMode: EnumList = {
+    [ScrollbarMode.THIN]: { name: 'Thin', description: "Thin modern scrollbar" },
+    [ScrollbarMode.MEDIUM]: { name: 'Medium', description: "Normal scrollbar" },
+    [ScrollbarMode.WIDE]: { name: 'Wide', description: "Large touch friendly scrollbar" },
+}
+
+export const enum AnimationMode {
+    ALL = 'all',
+    MOST = 'most',
+    SOME = 'some',
+    NONE = 'none',
+}
+
+let animationMode: EnumList = {
+    [AnimationMode.ALL]: { name: 'All', description: "All animations" },
+    [AnimationMode.MOST]: { name: 'Most', description: "All but the heaviest animations" },
+    [AnimationMode.SOME]: { name: 'Some', description: "Only the lightest animations" },
+    [AnimationMode.NONE]: { name: 'None', description: "No animations" },
+}
+
 export const enum AutoThemeMode {
     Off = 'off',
     OS = 'os',
@@ -24,31 +50,35 @@ let themes: EnumList = {
 }
 
 export const enum InputMode {
-    Mouse = 'mouse',
-    Pen = 'pen',
-    Touch = 'touch'
+    MOUSE = 'mouse',
+    PEN = 'pen',
+    TOUCH = 'touch'
 }
 let inputMode: EnumList = {
-    [InputMode.Mouse]: { name: 'Mouse', description: "Mouse input", icon: material_hardware_mouse_rounded() },
-    [InputMode.Pen]: { name: 'Pen', description: "Pen input", icon: material_image_edit_rounded() },
-    [InputMode.Touch]: { name: 'Touch', description: "Touch input", icon: material_action_touch_app_rounded() }
+    [InputMode.MOUSE]: { name: 'Mouse', description: "Mouse input", icon: material_hardware_mouse_rounded() },
+    [InputMode.PEN]: { name: 'Pen', description: "Pen input", icon: material_image_edit_rounded() },
+    [InputMode.TOUCH]: { name: 'Touch', description: "Touch input", icon: material_action_touch_app_rounded() }
 }
 
 export const enum AutoInputMode {
-    Off = 'off',
-    First = 'first',
-    Every = 'every'
+    OFF = 'off',
+    FIRST = 'first',
+    EVERY = 'every'
 }
 let autoInputMode: EnumList = {
-    [AutoInputMode.Off]: { name: 'Off', description: "Don't set touch mode automatically" },
-    [AutoInputMode.First]: { name: 'First Interaction', description: "Change touch mode on first ui interaction" },
-    [AutoInputMode.Every]: { name: 'Every Interaction', description: "Change touch mode on every ui interaction" }
+    [AutoInputMode.OFF]: { name: 'Off', description: "Don't set touch mode automatically" },
+    [AutoInputMode.FIRST]: { name: 'First Interaction', description: "Change touch mode on first ui interaction" },
+    [AutoInputMode.EVERY]: { name: 'Every Interaction', description: "Change touch mode on every ui interaction" }
 }
 
 export class Engine {
     /**Reference to document handler*/
     private _handler: DocumentHandler;
     private _listener: EListener<"added", DocumentHandler, Document>;
+
+    readonly scrollbar: ValueLimitedString;
+
+    readonly animations: ValueLimitedString;
 
     readonly theme: ValueLimitedString;
     readonly autoThemeMode: ValueLimitedString;
@@ -62,51 +92,81 @@ export class Engine {
     readonly autoInputMode: ValueLimitedString;
     private _autoInputListenerEvery = (event: PointerEvent) => {
         switch (event.pointerType) {
-            case 'mouse': this.inputMode.set = InputMode.Mouse; break;
-            case 'pen': this.inputMode.set = InputMode.Pen; break;
+            case 'mouse': this.inputMode.set = InputMode.MOUSE; break;
+            case 'pen': this.inputMode.set = InputMode.PEN; break;
             default:
-            case 'touch': this.inputMode.set = InputMode.Touch; break;
+            case 'touch': this.inputMode.set = InputMode.TOUCH; break;
         }
     }
+
+    readonly textScale: ValueLimitedNumber;
+    readonly textScaleMouse: ValueLimitedNumber;
+    readonly textScalePen: ValueLimitedNumber;
+    readonly textScaleTouch: ValueLimitedNumber;
 
     constructor(documentHandler: DocumentHandler, namespace: string = '') {
         if (namespace)
             namespace += '-'
+
+        this.scrollbar = settings.makeStringSetting(namespace + 'scrollbar', 'Scrollbar', 'Size of scrollbar', ScrollbarMode.THIN, scrollbarMode);
+        this.scrollbar.addListener(async (val) => { this.applyScrollbar(<ScrollbarMode>val); })
+
+        this.animations = settings.makeStringSetting(namespace + 'animations', 'Animations', 'Amount of animations in the ui', AnimationMode.ALL, animationMode);
+        this.animations.addListener(async (val) => { this.applyAnimation(<AnimationMode>val); })
+
         this.theme = settings.makeStringSetting(namespace + 'theme', 'Theme', 'Color theme of UI', (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DefaultThemes.Dark : DefaultThemes.Light), themes);
         this.theme.addListener((val) => { this.applyTheme(val); });
+
         this.autoThemeMode = settings.makeStringSetting(namespace + 'autoTheme', 'Automatic Theme Change', 'Toggle for automatically changing theme', AutoThemeMode.OS, autoThemeMode);
 
-        this.inputMode = settings.makeStringSetting(namespace + 'inputMode', 'Input Mode', 'Toggle between input modes', InputMode.Mouse, inputMode);
+        this.inputMode = settings.makeStringSetting(namespace + 'inputMode', 'Input Mode', 'Toggle between input modes', InputMode.MOUSE, inputMode);
         this.inputMode.addListener(async (val) => {
             switch (val) {
-                case InputMode.Mouse: this.scale.set = await this.scaleMouse.get; break;
-                case InputMode.Pen: this.scale.set = await this.scalePen.get; break;
-                case InputMode.Touch: this.scale.set = await this.scaleTouch.get; break;
+                case InputMode.MOUSE: this.scale.set = await this.scaleMouse.get; break;
+                case InputMode.PEN: this.scale.set = await this.scalePen.get; break;
+                case InputMode.TOUCH: this.scale.set = await this.scaleTouch.get; break;
             }
             this.applyInput(<InputMode>val);
         })
 
-        this.autoInputMode = settings.makeStringSetting(namespace + 'autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoInputMode.Every, autoInputMode)
+        this.autoInputMode = settings.makeStringSetting(namespace + 'autoTouch', 'Automatic Touch Mode', 'Mode for automatically changing touch mode', AutoInputMode.EVERY, autoInputMode)
         this.autoInputMode.addListener((val) => { this.applyAutoInput(<AutoInputMode>val); })
 
         this.scaleMouse = settings.makeNumberSetting(namespace + 'scaleMouse', 'UI Scale Mouse', 'The scale of the UI for mouse usage', 1, 0.5, 4, 0.1);
-        this.scaleMouse.addListener((val) => { if (this.inputMode.get === InputMode.Mouse) { this.scale.set = val; } });
-        this.scalePen = settings.makeNumberSetting(namespace + 'scalePen', 'UI Scale Pen', 'The scale of the UI for pen usage', 1, 0.5, 4, 0.1);
-        this.scalePen.addListener((val) => { if (this.inputMode.get === InputMode.Pen) { this.scale.set = val; } });
-        this.scaleTouch = settings.makeNumberSetting(namespace + 'scaleTouch', 'UI Scale Touch', 'The scale of the UI for touch usage', 1, 0.5, 4, 0.1);
-        this.scaleTouch.addListener((val) => { if (this.inputMode.get === InputMode.Touch) { this.scale.set = val; } });
+        this.scaleMouse.addListener((val) => { if (this.inputMode.get === InputMode.MOUSE) { this.scale.set = val; } });
+        this.scalePen = settings.makeNumberSetting(namespace + 'scalePen', 'UI Scale Pen', 'The scale of the UI for pen usage', 1.2, 0.5, 4, 0.1);
+        this.scalePen.addListener((val) => { if (this.inputMode.get === InputMode.PEN) { this.scale.set = val; } });
+        this.scaleTouch = settings.makeNumberSetting(namespace + 'scaleTouch', 'UI Scale Touch', 'The scale of the UI for touch usage', 1.6, 0.5, 4, 0.1);
+        this.scaleTouch.addListener((val) => { if (this.inputMode.get === InputMode.TOUCH) { this.scale.set = val; } });
 
         this.scale = new ValueLimitedNumber(1, 0.5, 4, 0.1);
         this.scale.addListener((val) => {
             this._scale = val * 16;
             this.applyScale(val);
             switch (this.inputMode.get) {
-                case InputMode.Mouse: this.scaleMouse.set = val; break;
-                case InputMode.Pen: this.scalePen.set = val; break;
-                case InputMode.Touch: this.scaleTouch.set = val; break;
+                case InputMode.MOUSE: this.scaleMouse.set = val; break;
+                case InputMode.PEN: this.scalePen.set = val; break;
+                case InputMode.TOUCH: this.scaleTouch.set = val; break;
             }
         });
         this._scale = <number>this.scale.get * 16;
+
+        this.textScaleMouse = settings.makeNumberSetting(namespace + 'textScaleMouse', 'UI Text Scale Mouse Mode', 'The scale of the UI text for mouse usage', 1, 0.5, 2, 0.1);
+        this.textScaleMouse.addListener((val) => { if (this.inputMode.get === InputMode.MOUSE) { this.textScale.set = val; } });
+        this.textScalePen = settings.makeNumberSetting(namespace + 'textScalePen', 'UI Text Scale Pen Mode', 'The scale of the UI text for pen usage', 1.2, 0.5, 2, 0.1);
+        this.textScalePen.addListener((val) => { if (this.inputMode.get === InputMode.PEN) { this.textScale.set = val; } });
+        this.textScaleTouch = settings.makeNumberSetting(namespace + 'textScaleTouch', 'UI Text Scale Touch Mode', 'The scale of the UI text for touch usage', 1.6, 0.5, 2, 0.1);
+        this.textScaleTouch.addListener((val) => { if (this.inputMode.get === InputMode.TOUCH) { this.textScale.set = val; } });
+
+        this.textScale = new ValueLimitedNumber(1, 0.5, 2, 0.1);
+        this.textScale.addListener((val) => {
+            this.applyTextScale(val);
+            switch (this.inputMode.get) {
+                case InputMode.MOUSE: this.textScaleMouse.set = val; break;
+                case InputMode.PEN: this.textScalePen.set = val; break;
+                case InputMode.TOUCH: this.textScaleTouch.set = val; break;
+            }
+        });
 
         engines.push(this);
         this._handler = documentHandler;
@@ -125,10 +185,35 @@ export class Engine {
 
     /**This applies the current theme to a document*/
     private async applyAllToDoc(doc: Document) {
+        this.applyScrollbarToDoc(doc, <ScrollbarMode>await this.scrollbar.get);
+        this.applyAnimationToDoc(doc, <AnimationMode>await this.animations.get);
         this.applyThemeToDoc(doc, await this.theme.get);
-        this.applyScaleToDoc(doc, await this.scale.get);
         this.applyAutoInputToDoc(doc, <AutoInputMode>await this.autoInputMode.get);
         this.applyInputToDoc(doc, <InputMode>await this.inputMode.get);
+        switch (<InputMode>await this.inputMode.get) {
+            case InputMode.MOUSE: this.scale.set = await this.scaleMouse.get; break;
+            case InputMode.PEN: this.scale.set = await this.scalePen.get; break;
+            case InputMode.TOUCH: this.scale.set = await this.scaleTouch.get; break;
+        }
+        this.applyScaleToDoc(doc, await this.scale.get);
+        this.applyTextScaleToDoc(doc, await this.textScale.get);
+    }
+
+    /**This applies the current theme to a document*/
+    private applyScrollbar(scroll: ScrollbarMode) { this._handler.forDocuments((doc) => { this.applyScrollbarToDoc(doc, scroll); }); }
+    private applyScrollbarToDoc(doc: Document, scroll: ScrollbarMode) {
+        doc.documentElement.style.setProperty('--scrollbar', { [ScrollbarMode.THIN]: '0.4rem', [ScrollbarMode.MEDIUM]: '1rem', [ScrollbarMode.WIDE]: '1.875rem' }[scroll]);
+    }
+
+    /**This applies the current theme to a document*/
+    private applyAnimation(anim: AnimationMode) { this._handler.forDocuments((doc) => { this.applyAnimationToDoc(doc, anim); }); }
+    private applyAnimationToDoc(doc: Document, anim: AnimationMode) {
+        doc.documentElement.classList.remove('anim-all', 'anim-most', 'anim-some');
+        switch (anim) {
+            case AnimationMode.ALL: doc.documentElement.classList.add('anim-all');
+            case AnimationMode.MOST: doc.documentElement.classList.add('anim-most');
+            case AnimationMode.SOME: doc.documentElement.classList.add('anim-some'); break;
+        }
     }
 
     /**This applies the current theme to a document*/
@@ -139,6 +224,10 @@ export class Engine {
     private applyScale(scale: number) { this._handler.forDocuments((doc) => { this.applyScaleToDoc(doc, scale); }); }
     private applyScaleToDoc(doc: Document, scale: number) { doc.documentElement.style.fontSize = scale * 16 + 'px'; }
 
+    /**This applies the current scale to a document*/
+    private applyTextScale(scale: number) { this._handler.forDocuments((doc) => { this.applyTextScaleToDoc(doc, scale); }); }
+    private applyTextScaleToDoc(doc: Document, scale: number) { doc.documentElement.style.setProperty('--textScale', String(scale)); }
+
     /**Auto Input Mode */
     private applyInput(mode: InputMode) { this._handler.forDocuments((doc) => { this.applyInputToDoc(doc, mode); }); }
     private applyInputToDoc(doc: Document, mode: InputMode) {
@@ -146,10 +235,20 @@ export class Engine {
         style.setProperty('--mouse', '0');
         style.setProperty('--pen', '0');
         style.setProperty('--touch', '0');
+        doc.documentElement.classList.remove('mouse', 'pen', 'touch');
         switch (mode) {
-            case InputMode.Mouse: style.setProperty('--mouse', '1'); break;
-            case InputMode.Pen: style.setProperty('--pen', '1'); break;
-            case InputMode.Touch: style.setProperty('--touch', '1'); break;
+            case InputMode.MOUSE:
+                style.setProperty('--mouse', '1');
+                doc.documentElement.classList.add('mouse');
+                break;
+            case InputMode.PEN:
+                style.setProperty('--pen', '1');
+                doc.documentElement.classList.add('pen');
+                break;
+            case InputMode.TOUCH:
+                style.setProperty('--touch', '1');
+                doc.documentElement.classList.add('touch');
+                break;
         }
     }
 
@@ -158,10 +257,10 @@ export class Engine {
     private applyAutoInputToDoc(doc: Document, mode: AutoInputMode) {
         doc.documentElement.removeEventListener('pointerdown', this._autoInputListenerEvery, { capture: true });
         switch (mode) {
-            case AutoInputMode.First:
+            case AutoInputMode.FIRST:
                 doc.documentElement.addEventListener('pointerdown', this._autoInputListenerEvery, { capture: true, once: true });
                 break;
-            case AutoInputMode.Every:
+            case AutoInputMode.EVERY:
                 doc.documentElement.addEventListener('pointerdown', this._autoInputListenerEvery, { capture: true });
                 break;
         }
