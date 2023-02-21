@@ -1,7 +1,7 @@
 
 import { initSettings } from "@chocolatelibui/settings"
 import DocumentHandler from "@chocolatelibui/document";
-import { EnumList, Value, ValueLimitedNumber, ValueLimitedString } from "@chocolatelib/value";
+import { EnumList, ValueLimitedNumber, ValueLimitedString } from "@chocolatelib/value";
 import { name } from "../package.json"
 import { bottomGroups, DefaultThemes, engines } from "./shared";
 import { EListener } from "@chocolatelib/events";
