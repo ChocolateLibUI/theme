@@ -1,25 +1,4 @@
-import { EnumList } from "@chocolatelib/value"
-import { settings } from "./shared";
-import { events, forDocuments } from "@chocolatelibui/document"
-
-let bottomGroups: { [key: string]: VariableGroup } = {};
-
-/**Default themes*/
-const enum DefaultThemes {
-    Light = 'light',
-    Dark = 'dark'
-}
-
-/**Default themes info */
-let themes: EnumList = {
-    [DefaultThemes.Light]: { name: 'Light', description: "Don't set touch mode automatically" },
-    [DefaultThemes.Dark]: { name: 'Dark', description: "Change touch mode on first ui interaction" },
-}
-
-/**State of themes*/
-export let theme = settings.makeStringSetting('theme', 'Theme', 'Color theme of UI', (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DefaultThemes.Dark : DefaultThemes.Light), themes);
-/**State of automatic theme change*/
-export let autoTheme = settings.makeBooleanSetting('autoTheme', 'Automatic Theme Change', 'Toggle for automatically changing theme', true);
+import { bottomGroups, DefaultThemes, engines } from "./shared";
 
 /**Initialises the settings for the package
  * @param packageName use import {name} from ("../package.json")
@@ -72,10 +51,11 @@ export class VariableGroup {
         typeParams;
         let key = '--' + this.pathID + '/' + id;
         let variable = this.variables[key] = { name, desc: description, vars: { [DefaultThemes.Light]: light, [DefaultThemes.Dark]: dark } }
-        forDocuments((doc) => {
-            // @ts-expect-error 
-            doc.documentElement.style.setProperty(key, variable.vars[(<string>theme.get)]);
-        });
+        for (let i = 0; i < engines.length; i++) {
+            //@ts-ignore
+            engines[i].applySingleProperty(key, variable.vars)
+        }
+
         return;
     }
 
@@ -114,31 +94,3 @@ interface VariableType {
     /**Ratio*/
     Ratio: { width: { min: number, max: number }, height: { min: number, max: number } } | number | undefined,
 }
-
-/**This applies the current theme to a document*/
-let applyTheme = (docu: Document, theme: string) => {
-    for (const key in bottomGroups) {
-        bottomGroups[key].applyThemes(docu.documentElement.style, theme)
-    }
-}
-
-/**Listener for theme change*/
-theme.addListener((value) => {
-    forDocuments((doc) => {
-        applyTheme(doc, value);
-    });
-});
-
-//Sets up automatic theme change based on operating system
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    if (autoTheme.get) {
-        theme.set = (e.matches ? DefaultThemes.Dark : DefaultThemes.Light);
-    }
-});
-
-events.on('documentAdded', (e) => {
-    applyTheme(e.data, <string>theme.get);
-})
-forDocuments((doc) => {
-    applyTheme(doc, <string>theme.get);
-});

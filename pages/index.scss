@@ -1,0 +1,42 @@
+@import "../src/scrollbar.scss";
+
+
+
+body {
+    --scrollbarColor: pink;
+    --scrollbarHoverColor: green;
+    --scrollbarActiveColor: yellow;
+
+    @include scrollbar;
+
+    background-color: var(--\@chocolatelibui\/theme\/test);
+    height: 200rem;
+    transition: all 1s;
+}
+
+div {
+    font-size: calc(1rem * var(--textScale));
+    color: var(--\@chocolatelibui\/theme\/testText);
+    transition: all 1s;
+}
+
+button {
+    height: 2rem;
+    font-size: 1rem;
+
+    transition: all 1s;
+}
+
+select {
+    height: 2rem;
+    font-size: 1rem;
+
+    transition: all 1s;
+}
+
+input {
+    height: 2rem;
+    font-size: 1rem;
+
+    transition: all 1s;
+}

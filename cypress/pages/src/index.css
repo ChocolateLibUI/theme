@@ -1,19 +1,5 @@
-#TouchBox {
-    height: 2rem;
-    width: 3rem;
-}
-
-.touch #TouchBox {
-    height: 3rem;
-    width: 4rem;
-}
-
 #ScaleBox {
     height: 2rem;
     width: 3rem;
-}
-
-.touch #ScaleBox {
-    height: 3rem;
-    width: 4rem;
+    font-size: calc(1rem * var(--textScale));
 }

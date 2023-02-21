@@ -1,4 +1,11 @@
-import { initSettings } from "@chocolatelibui/settings"
-import { name } from "../package.json"
+import { Engine } from "./engine";
+import { VariableGroup } from "./variables";
 
-export let settings = initSettings(name, 'Theme/UI', 'Settings for UI elements and and color themes');
+export const enum DefaultThemes {
+    Light = 'light',
+    Dark = 'dark'
+}
+
+export let engines: Engine[] = [];
+
+export let bottomGroups: { [key: string]: VariableGroup } = {};

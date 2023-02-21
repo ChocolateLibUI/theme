@@ -1,6 +1,6 @@
 {
   "name": "@chocolatelibui/theme",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/types.d.ts",
@@ -23,6 +23,7 @@
   "devDependencies": {
     "cypress": "12.1.0",
     "cypress-vite": "^1.2.1",
+    "sass": "^1.57.1",
     "start-server-and-test": "^1.14.0",
     "tslib": "^2.4.1",
     "typescript": "^4.9.3",
@@ -40,8 +41,10 @@
   },
   "homepage": "https://github.com/ChocolateLibUI/theme#readme",
   "dependencies": {
-    "@chocolatelib/value": "<1.0.0 || ^1.0.0",
-    "@chocolatelibui/document": "<1.0.0 || ^1.0.0",
-    "@chocolatelibui/settings": "<1.0.0 || ^1.0.0"
+    "@chocolatelib/events": ">=0.0.7 || ^1.0.0",
+    "@chocolatelib/value": ">=0.0.14 || ^1.0.0",
+    "@chocolatelibui/document": ">=0.0.4 || ^1.0.0",
+    "@chocolatelibui/icons": ">=0.0.3 || ^1.0.0",
+    "@chocolatelibui/settings": ">=0.0.9 || ^1.0.0"
   }
 }
