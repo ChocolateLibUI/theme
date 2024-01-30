@@ -1,5 +1,7 @@
-import { Engine } from "./engine";
-export default Engine;
-export { AutoInputMode as AutoTouchMode } from "./engine";
-export { DefaultThemes } from "./shared";
 export { VariableGroup, initVariableRoot } from "./variables";
+import * as themeSettings from "./settings";
+export * from "./engine";
+export default themeSettings.theme;
+export { themeSettings };
+export const pxToRem = themeSettings.pxToRem;
+export const remToPx = themeSettings.remToPx;
