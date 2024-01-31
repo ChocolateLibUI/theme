@@ -1,8 +1,22 @@
 import "./index.scss";
 import DocumentHandler from "@chocolatelibui/document";
 import { name } from "../package.json";
-import theme, { initVariableRoot, themeSettings, ThemeEngine } from "../src";
-import { inputMode } from "../src/settings";
+import { initVariableRoot, ThemeEngine } from "../src";
+import {
+  animationLevel,
+  AnimationLevels,
+  animationLevels,
+  inputMode,
+  InputModes,
+  inputModes,
+  scale,
+  scrollBarMode,
+  ScrollbarModes,
+  scrollbarModes,
+  theme,
+  Themes,
+  themes,
+} from "../src/settings";
 
 let documentHandler = new DocumentHandler(document);
 let themeEngine = new ThemeEngine(documentHandler);
@@ -39,48 +53,48 @@ varGroup.makeVariable(
 let setup = async (doc: Document) => {
   //Scrollbar
   let scrollSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await themeSettings.scrollbarModes).unwrap) {
+  for (const key in (await scrollbarModes).unwrap) {
     let option = scrollSel.appendChild(document.createElement("option"));
     option.innerHTML = key;
   }
   scrollSel.addEventListener("change", (e) => {
-    themeSettings.scrollBarMode.write(
+    scrollBarMode.write(
       (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
-        .innerHTML as themeSettings.ScrollbarModes
+        .innerHTML as ScrollbarModes
     );
   });
-  scrollSel.value = (await themeSettings.scrollBarMode).unwrap;
-  themeSettings.scrollBarMode.subscribe((val) => {
+  scrollSel.value = (await scrollBarMode).unwrap;
+  scrollBarMode.subscribe((val) => {
     scrollSel.value = val.unwrap;
   });
 
   //Animations
   let animAutoSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await themeSettings.animationLevels).unwrap) {
+  for (const key in (await animationLevels).unwrap) {
     let option = animAutoSel.appendChild(document.createElement("option"));
     option.innerHTML = key;
   }
   animAutoSel.addEventListener("change", async (e) => {
-    themeSettings.animationLevel.write(
+    animationLevel.write(
       (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
-        .innerHTML as themeSettings.AnimationLevels
+        .innerHTML as AnimationLevels
     );
   });
-  animAutoSel.value = (await themeSettings.animationLevel).unwrap;
-  themeSettings.animationLevel.subscribe((val) => {
+  animAutoSel.value = (await animationLevel).unwrap;
+  animationLevel.subscribe((val) => {
     animAutoSel.value = val.unwrap;
   });
 
   //Theme
   let themeAutoSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await themeSettings.themes).unwrap) {
+  for (const key in (await themes).unwrap) {
     let option = themeAutoSel.appendChild(document.createElement("option"));
     option.innerHTML = key;
   }
   themeAutoSel.addEventListener("change", async (e) => {
     theme.write(
       (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
-        .innerHTML as themeSettings.Themes
+        .innerHTML as Themes
     );
   });
   themeAutoSel.value = (await theme).unwrap;
@@ -88,11 +102,11 @@ let setup = async (doc: Document) => {
     themeAutoSel.value = val.unwrap;
   });
 
-  for (const key in (await themeSettings.themes).unwrap) {
+  for (const key in (await themes).unwrap) {
     let test = doc.body.appendChild(document.createElement("button"));
     test.innerHTML = key;
     test.addEventListener("click", () => {
-      theme.write(key as themeSettings.Themes);
+      theme.write(key as Themes);
     });
   }
 
@@ -100,29 +114,29 @@ let setup = async (doc: Document) => {
   let scaleIn = doc.body.appendChild(document.createElement("input"));
   scaleIn.type = "number";
   scaleIn.addEventListener("change", async () => {
-    themeSettings.scale.write(scaleIn.valueAsNumber);
-    scaleIn.valueAsNumber = (await themeSettings.scale).unwrap;
+    scale.write(scaleIn.valueAsNumber);
+    scaleIn.valueAsNumber = (await scale).unwrap;
   });
-  scaleIn.valueAsNumber = (await themeSettings.scale).unwrap;
-  themeSettings.scale.subscribe((val) => {
+  scaleIn.valueAsNumber = (await scale).unwrap;
+  scale.subscribe((val) => {
     scaleIn.valueAsNumber = val.unwrap;
   });
 
   //InputMode
   let inputModeSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await themeSettings.inputModes).unwrap) {
+  for (const key in (await inputModes).unwrap) {
     let option = inputModeSel.appendChild(document.createElement("option"));
     option.innerHTML = key;
   }
   inputModeSel.addEventListener("change", async (e) => {
     inputMode.write(
       (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
-        .innerHTML as themeSettings.InputModes
+        .innerHTML as InputModes
     );
   });
-  inputModeSel.value = (await themeSettings.inputMode).unwrap;
+  inputModeSel.value = (await inputMode).unwrap;
 
-  themeSettings.inputMode.subscribe((val) => {
+  inputMode.subscribe((val) => {
     inputModeSel.value = val.unwrap;
   });
 
