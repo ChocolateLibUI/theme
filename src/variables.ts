@@ -1,6 +1,11 @@
 import { Themes } from "./settings";
 import { bottomGroups, engines } from "./shared";
 
+let nameTransformer: ((name: string) => string) | undefined;
+export let settingsSetNameTransform = (transform: (name: string) => string) => {
+  nameTransformer = transform;
+};
+
 /**Initialises the settings for the package
  * @param packageName use import {name} from ("../package.json")
  * @param name name of group formatted for user reading
@@ -10,7 +15,9 @@ export let initVariableRoot = (
   name: string,
   description: string
 ) => {
-  // @ts-expect-error
+  if (nameTransformer) {
+    packageName = nameTransformer(packageName);
+  }
   bottomGroups[packageName] = new VariableGroup(packageName, name, description);
   return bottomGroups[packageName];
 };
@@ -29,7 +36,7 @@ export class VariableGroup {
   readonly name: string;
   readonly description: string;
 
-  private constructor(path: string, name: string, description: string) {
+  constructor(path: string, name: string, description: string) {
     this.pathID = path;
     this.name = name;
     this.description = description;
@@ -57,7 +64,8 @@ export class VariableGroup {
    * @param description a description of what the variable is about formatted for user reading
    * @param light value for light mode
    * @param dark value for dark mode
-   * @param type type of variable for editing*/
+   * @param type type of variable for editing
+   * @param typeParams */
   makeVariable<K extends keyof VariableType>(
     id: string,
     name: string,
@@ -106,26 +114,23 @@ interface VariableType {
   /**Color variable */
   Color: undefined;
   /**Time variable */
-  Time:
-    | {
-        /**Minimum time in milliseconds */
-        min: number;
-        /**Maximum time in milliseconds */
-        max: number;
-      }
-    | undefined;
+  Time: {
+    /**Minimum time in milliseconds */
+    min: number;
+    /**Maximum time in milliseconds */
+    max: number;
+  };
   /**Angle variable */
-  Angle: { min: number; max: number } | undefined;
+  Angle: { min: number; max: number };
   /**Length variable*/
-  Length: { min: number; max: number } | undefined;
+  Length: { min: number; max: number };
   /**Number variable*/
-  Number: { min: number; max: number } | undefined;
+  Number: { min: number; max: number };
   /**Ratio*/
   Ratio:
     | {
         width: { min: number; max: number };
         height: { min: number; max: number };
       }
-    | number
-    | undefined;
+    | number;
 }
