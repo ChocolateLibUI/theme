@@ -1,53 +1,55 @@
 @import "../src/scrollbar.scss";
 
-
-
 body {
-    --scrollbarColor: pink;
-    --scrollbarHoverColor: green;
-    --scrollbarActiveColor: yellow;
+  --scrollbarColor: pink;
+  --scrollbarHoverColor: green;
+  --scrollbarActiveColor: yellow;
 
-    @include scrollbar;
+  @include scrollbar;
 
-    background-color: var(--\@chocolatelibui\/theme\/test);
-    height: 200rem;
+  background-color: var(--\@chocolatelibui\/theme\/test);
+  height: 200rem;
 
-    .anim-all & {
-        transition: all 1s;
-    }
+  .anim-all & {
+    transition: all 1s;
+  }
 }
 
 div {
-    font-size: calc(1rem * var(--textScale));
-    color: var(--\@chocolatelibui\/theme\/testText);
-    .anim-all & {
-        transition: all 1s;
-    }
+  font-size: calc(1rem * var(--textScale));
+  color: var(--\@chocolatelibui\/theme\/testText);
+  .anim-all & {
+    transition: all 1s;
+  }
 }
 
 button {
-    height: 2rem;
-    font-size: 1rem;
+  height: 2rem;
+  font-size: 1rem;
 
-    .anim-all & {
-        transition: all 1s;
-    }
+  .anim-all & {
+    transition: all 1s;
+  }
+
+  .touch & {
+    height: 3rem;
+  }
 }
 
 select {
-    height: 2rem;
-    font-size: 1rem;
+  height: 2rem;
+  font-size: 1rem;
 
-    .anim-all & {
-        transition: all 1s;
-    }
+  .anim-all & {
+    transition: all 1s;
+  }
 }
 
 input {
-    height: 2rem;
-    font-size: 1rem;
+  height: 2rem;
+  font-size: 1rem;
 
-    .anim-all & {
-        transition: all 1s;
-    }
+  .anim-all & {
+    transition: all 1s;
+  }
 }

@@ -5,17 +5,13 @@ import { initVariableRoot, ThemeEngine } from "../src";
 import {
   animationLevel,
   AnimationLevels,
-  animationLevels,
   inputMode,
   InputModes,
-  inputModes,
   scale,
   scrollBarMode,
   ScrollbarModes,
-  scrollbarModes,
   theme,
   Themes,
-  themes,
 } from "../src/settings";
 
 let documentHandler = new DocumentHandler(document);
@@ -51,43 +47,10 @@ varGroup.makeVariable(
 );
 
 let setup = async (doc: Document) => {
-  //Scrollbar
-  let scrollSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await scrollbarModes).unwrap) {
-    let option = scrollSel.appendChild(document.createElement("option"));
-    option.innerHTML = key;
-  }
-  scrollSel.addEventListener("change", (e) => {
-    scrollBarMode.write(
-      (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
-        .innerHTML as ScrollbarModes
-    );
-  });
-  scrollSel.value = (await scrollBarMode).unwrap;
-  scrollBarMode.subscribe((val) => {
-    scrollSel.value = val.unwrap;
-  });
-
-  //Animations
-  let animAutoSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await animationLevels).unwrap) {
-    let option = animAutoSel.appendChild(document.createElement("option"));
-    option.innerHTML = key;
-  }
-  animAutoSel.addEventListener("change", async (e) => {
-    animationLevel.write(
-      (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
-        .innerHTML as AnimationLevels
-    );
-  });
-  animAutoSel.value = (await animationLevel).unwrap;
-  animationLevel.subscribe((val) => {
-    animAutoSel.value = val.unwrap;
-  });
-
   //Theme
   let themeAutoSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await themes).unwrap) {
+  let themes = theme.related().unwrap.list!;
+  for (const key in themes) {
     let option = themeAutoSel.appendChild(document.createElement("option"));
     option.innerHTML = key;
   }
@@ -97,18 +60,54 @@ let setup = async (doc: Document) => {
         .innerHTML as Themes
     );
   });
-  themeAutoSel.value = (await theme).unwrap;
+  themeAutoSel.value = theme.get().unwrap;
   theme.subscribe((val) => {
     themeAutoSel.value = val.unwrap;
   });
 
-  for (const key in (await themes).unwrap) {
+  for (const key in themes) {
     let test = doc.body.appendChild(document.createElement("button"));
     test.innerHTML = key;
     test.addEventListener("click", () => {
       theme.write(key as Themes);
     });
   }
+
+  //Scrollbar
+  let scrollSel = doc.body.appendChild(document.createElement("select"));
+  let scrollbarModes = scrollBarMode.related().unwrap.list!;
+  for (const key in scrollbarModes) {
+    let option = scrollSel.appendChild(document.createElement("option"));
+    option.innerHTML = key;
+  }
+  scrollSel.addEventListener("change", (e) => {
+    scrollBarMode.write(
+      (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
+        .innerHTML as ScrollbarModes
+    );
+  });
+  scrollSel.value = scrollBarMode.get().unwrap;
+  scrollBarMode.subscribe((val) => {
+    scrollSel.value = val.unwrap;
+  });
+
+  //Animations
+  let animAutoSel = doc.body.appendChild(document.createElement("select"));
+  let animationLevels = animationLevel.related().unwrap.list!;
+  for (const key in animationLevels) {
+    let option = animAutoSel.appendChild(document.createElement("option"));
+    option.innerHTML = key;
+  }
+  animAutoSel.addEventListener("change", async (e) => {
+    animationLevel.write(
+      (<HTMLSelectElement>e.currentTarget).selectedOptions[0]
+        .innerHTML as AnimationLevels
+    );
+  });
+  animAutoSel.value = animationLevel.get().unwrap;
+  animationLevel.subscribe((val) => {
+    animAutoSel.value = val.unwrap;
+  });
 
   //Scale
   let scaleIn = doc.body.appendChild(document.createElement("input"));
@@ -124,7 +123,8 @@ let setup = async (doc: Document) => {
 
   //InputMode
   let inputModeSel = doc.body.appendChild(document.createElement("select"));
-  for (const key in (await inputModes).unwrap) {
+  let inputModes = inputMode.related().unwrap.list!;
+  for (const key in inputModes) {
     let option = inputModeSel.appendChild(document.createElement("option"));
     option.innerHTML = key;
   }
@@ -134,7 +134,7 @@ let setup = async (doc: Document) => {
         .innerHTML as InputModes
     );
   });
-  inputModeSel.value = (await inputMode).unwrap;
+  inputModeSel.value = inputMode.get().unwrap;
 
   inputMode.subscribe((val) => {
     inputModeSel.value = val.unwrap;
