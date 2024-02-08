@@ -30,6 +30,9 @@ export class VariableGroup {
       name: string;
       desc: string;
       vars: { [key: string]: string };
+      type: keyof VariableType;
+      typeParams: VariableType[keyof VariableType];
+      example?: () => Element;
     };
   } = {};
   private subGroups: { [key: string]: VariableGroup } = {};
@@ -73,18 +76,20 @@ export class VariableGroup {
     light: string,
     dark: string,
     type: K,
-    typeParams: VariableType[K]
+    typeParams: VariableType[K],
+    example?: () => Element
   ) {
     if (id in this.variables) {
       throw new Error("Settings already registered " + id);
     }
-    type;
-    typeParams;
     let key = "--" + this.pathID + "/" + id;
     let variable = (this.variables[key] = {
       name,
       desc: description,
       vars: { [Themes.Light]: light, [Themes.Dark]: dark },
+      type,
+      typeParams,
+      example,
     });
     for (let i = 0; i < engines.length; i++) {
       //@ts-ignore
