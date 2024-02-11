@@ -2,15 +2,15 @@ import { Themes } from "./settings";
 import { bottomGroups, engines } from "./shared";
 
 let nameTransformer: ((name: string) => string) | undefined;
-export let settingsSetNameTransform = (transform: (name: string) => string) => {
+export let themeSetNameTransform = (transform: (name: string) => string) => {
   nameTransformer = transform;
 };
 
 /**Initialises the settings for the package
- * @param packageName use import {name} from ("../package.json")
+ * @param packageName use import {name} from "../package.json"
  * @param name name of group formatted for user reading
  * @param description a description of what the setting group is about*/
-export let initVariableRoot = (
+export let themeInitVariableRoot = (
   packageName: string,
   name: string,
   description: string
@@ -18,12 +18,16 @@ export let initVariableRoot = (
   if (nameTransformer) {
     packageName = nameTransformer(packageName);
   }
-  bottomGroups[packageName] = new VariableGroup(packageName, name, description);
+  bottomGroups[packageName] = new ThemeVariableGroup(
+    packageName,
+    name,
+    description
+  );
   return bottomGroups[packageName];
 };
 
 /**Group of settings should never be instantiated manually use initSettings*/
-export class VariableGroup {
+export class ThemeVariableGroup {
   private pathID: string;
   private variables: {
     [key: string]: {
@@ -35,7 +39,7 @@ export class VariableGroup {
       example?: () => Element;
     };
   } = {};
-  private subGroups: { [key: string]: VariableGroup } = {};
+  private subGroups: { [key: string]: ThemeVariableGroup } = {};
   readonly name: string;
   readonly description: string;
 
@@ -53,7 +57,7 @@ export class VariableGroup {
     if (id in this.subGroups) {
       throw new Error("Sub group already registered " + id);
     } else {
-      return (this.subGroups[id] = new VariableGroup(
+      return (this.subGroups[id] = new ThemeVariableGroup(
         this.pathID + "/" + id,
         name,
         description

@@ -137,6 +137,7 @@ export class ThemeEngine {
     }
   }
 
+  //@ts-expect-error
   private async applySingleProperty(
     key: string,
     variable: { [s: string]: string }
