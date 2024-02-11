@@ -1,15 +1,12 @@
 import { name, version } from "../package.json";
 import {
-  State,
-  StateEnumLimits,
-  StateEnumList,
-  StateEnumRelated,
-  StateNumberLimits,
-  StateNumberRelated,
-  StateRead,
+  StateEnumHelper,
+  StateEnumHelperList,
+  StateEnumHelperType,
+  StateNumberHelper,
   StateWrite,
 } from "@chocolatelib/state";
-import { initSettings } from "@chocolatelibui/settings";
+import { settingsInit } from "@chocolatelibui/settings";
 import {
   material_hardware_mouse_rounded,
   material_image_edit_rounded,
@@ -17,10 +14,9 @@ import {
   material_device_light_mode_rounded,
   material_device_dark_mode_rounded,
 } from "@chocolatelibui/icons";
-import { Ok, Some } from "@chocolatelib/result";
 import { engines } from "./shared";
 
-const settings = initSettings(
+const settings = settingsInit(
   name,
   version,
   "Theme/UI",
@@ -32,7 +28,7 @@ export const enum Themes {
   Light = "light",
   Dark = "dark",
 }
-const themesInternal: StateEnumList = {
+const themesInternal = {
   [Themes.Light]: {
     name: "Light",
     description: "Theme optimized for daylight",
@@ -43,22 +39,17 @@ const themesInternal: StateEnumList = {
     description: "Theme optimized for night time",
     icon: material_device_dark_mode_rounded,
   },
-};
-export const themes = new State(Ok(themesInternal)) as StateRead<StateEnumList>;
-const themesLimiter = new StateEnumLimits<Themes>(themesInternal);
+} satisfies StateEnumHelperList;
 
-const themeInternal = settings.addSetting<Themes, Themes, StateEnumRelated>(
+const themeInternal = settings.addSetting(
   "theme",
+  "Theme",
+  "Theme to use for the UI",
   window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
     ? Themes.Dark
     : Themes.Light,
-  "Theme",
-  "Theme to use for the UI",
   true,
-  themesLimiter,
-  () => {
-    return Some({ list: themes });
-  }
+  new StateEnumHelper(themesInternal)
 );
 themeInternal.subscribe((val) => {
   engines.forEach((engine) => {
@@ -66,7 +57,11 @@ themeInternal.subscribe((val) => {
   });
 });
 
-export const theme = themeInternal as StateWrite<Themes>;
+export const theme = themeInternal as StateWrite<
+  Themes,
+  Themes,
+  StateEnumHelperType<typeof themesInternal>
+>;
 
 //Sets up automatic theme change based on operating system
 window
@@ -76,28 +71,14 @@ window
   });
 
 //Scale
-const scaleMax = new State(Ok(400));
-const scaleMin = new State(Ok(50));
-const scaleDecimals = new State(Ok(0));
-const scaleUnit = new State(Ok("%"));
-const scaleLimiter = new StateNumberLimits(50, 400);
 let scaleValue = 1;
-
-const scaleInternal = settings.addSetting<number, number, StateNumberRelated>(
+const scaleInternal = settings.addSetting(
   "scale",
-  100,
   "Scale",
   "UI scale",
+  100,
   true,
-  scaleLimiter,
-  () => {
-    return Some({
-      min: scaleMin,
-      max: scaleMax,
-      unit: scaleUnit,
-      decimals: scaleDecimals,
-    });
-  }
+  new StateNumberHelper(50, 400, "%", 0, 1)
 );
 scaleInternal.subscribe((val) => {
   scaleValue = val.unwrap / 100;
@@ -106,6 +87,7 @@ scaleInternal.subscribe((val) => {
   });
 });
 export const scale = scaleInternal as StateWrite<number>;
+
 /**Converts the given rems to pixels */
 export const remToPx = (rem: number) => {
   return rem * scaleValue;
@@ -131,37 +113,26 @@ const scrollbarModesInternal = {
     name: "Wide",
     description: "Large touch friendly scrollbar",
   },
-} as StateEnumList;
+} satisfies StateEnumHelperList;
 
-export const scrollbarModes = new State(
-  Ok(scrollbarModesInternal)
-) as StateRead<StateEnumList>;
-const scrollbarModesLimiter = new StateEnumLimits<ScrollbarModes>(
-  scrollbarModesInternal
-);
-
-const scrollBarModeInternal = settings.addSetting<
-  ScrollbarModes,
-  ScrollbarModes,
-  StateEnumRelated
->(
+const scrollBarModeInternal = settings.addSetting(
   "scrollbar",
-  ScrollbarModes.THIN,
   "Scrollbar Mode",
   "Size of the scrollbar to use",
+  ScrollbarModes.THIN,
   true,
-  scrollbarModesLimiter,
-  () => {
-    return Some({ list: scrollbarModes });
-  }
+  new StateEnumHelper(scrollbarModesInternal)
 );
 scrollBarModeInternal.subscribe((val) => {
   engines.forEach((engine) => {
     engine.applyScrollbar(val.unwrap);
   });
 });
-export const scrollBarMode =
-  scrollBarModeInternal as StateWrite<ScrollbarModes>;
+export const scrollBarMode = scrollBarModeInternal as StateWrite<
+  ScrollbarModes,
+  ScrollbarModes,
+  StateEnumHelperType<typeof scrollbarModesInternal>
+>;
 
 //Input Mode
 export const enum InputModes {
@@ -169,7 +140,7 @@ export const enum InputModes {
   PEN = "pen",
   TOUCH = "touch",
 }
-const inputModesInternal: StateEnumList = {
+const inputModesInternal = {
   [InputModes.MOUSE]: {
     name: "Mouse",
     description: "Mouse input",
@@ -185,33 +156,25 @@ const inputModesInternal: StateEnumList = {
     description: "Touch input",
     icon: material_action_touch_app_rounded,
   },
-};
-export const inputModes = new State(
-  Ok(inputModesInternal)
-) as StateRead<StateEnumList>;
-const inputModeLimiter = new StateEnumLimits<InputModes>(inputModesInternal);
-
-const inputModeInternal = settings.addSetting<
-  InputModes,
-  InputModes,
-  StateEnumRelated
->(
+} satisfies StateEnumHelperList;
+const inputModeInternal = settings.addSetting(
   "input",
-  InputModes.TOUCH,
   "Input Mode",
   "Setting for preffered input mode, changes UI elements to be more optimized for the selected input mode",
+  InputModes.TOUCH,
   true,
-  inputModeLimiter,
-  () => {
-    return Some({ list: inputModes });
-  }
+  new StateEnumHelper(inputModesInternal)
 );
 inputModeInternal.subscribe((val) => {
   engines.forEach((engine) => {
     engine.applyInput(val.unwrap);
   });
 });
-export const inputMode = inputModeInternal as StateWrite<InputModes>;
+export const inputMode = inputModeInternal as StateWrite<
+  InputModes,
+  InputModes,
+  StateEnumHelperType<typeof inputModesInternal>
+>;
 
 //Animation Level
 export const enum AnimationLevels {
@@ -220,7 +183,7 @@ export const enum AnimationLevels {
   SOME = "some",
   NONE = "none",
 }
-const animationLevelsInternal: StateEnumList = {
+const animationLevelsInternal = {
   [AnimationLevels.ALL]: { name: "All", description: "All animations" },
   [AnimationLevels.MOST]: {
     name: "Most",
@@ -231,28 +194,15 @@ const animationLevelsInternal: StateEnumList = {
     description: "Only the lightest animations",
   },
   [AnimationLevels.NONE]: { name: "None", description: "No animations" },
-};
-export const animationLevels = new State(
-  Ok(animationLevelsInternal)
-) as StateRead<StateEnumList>;
-const animationLevelsLimiter = new StateEnumLimits<AnimationLevels>(
-  animationLevelsInternal
-);
+} satisfies StateEnumHelperList;
 
-const animationLevelInternal = settings.addSetting<
-  AnimationLevels,
-  AnimationLevels,
-  StateEnumRelated
->(
+const animationLevelInternal = settings.addSetting(
   "animation",
-  AnimationLevels.ALL,
   "Animation Level",
   "Setting for animation level, changes the amount of animations used in the UI",
+  AnimationLevels.ALL,
   true,
-  animationLevelsLimiter,
-  () => {
-    return Some({ list: animationLevels });
-  }
+  new StateEnumHelper(animationLevelsInternal)
 );
 animationLevelInternal.subscribe((val) => {
   engines.forEach((engine) => {
@@ -260,5 +210,8 @@ animationLevelInternal.subscribe((val) => {
   });
 });
 
-export const animationLevel =
-  animationLevelInternal as StateWrite<AnimationLevels>;
+export const animationLevel = animationLevelInternal as StateWrite<
+  AnimationLevels,
+  AnimationLevels,
+  StateEnumHelperType<typeof animationLevelsInternal>
+>;

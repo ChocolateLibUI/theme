@@ -1,35 +1,49 @@
 import { Themes } from "./settings";
 import { bottomGroups, engines } from "./shared";
 
+let nameTransformer: ((name: string) => string) | undefined;
+export let themeSetNameTransform = (transform: (name: string) => string) => {
+  nameTransformer = transform;
+};
+
 /**Initialises the settings for the package
- * @param packageName use import {name} from ("../package.json")
+ * @param packageName use import {name} from "../package.json"
  * @param name name of group formatted for user reading
  * @param description a description of what the setting group is about*/
-export let initVariableRoot = (
+export let themeInitVariableRoot = (
   packageName: string,
   name: string,
   description: string
 ) => {
-  // @ts-expect-error
-  bottomGroups[packageName] = new VariableGroup(packageName, name, description);
+  if (nameTransformer) {
+    packageName = nameTransformer(packageName);
+  }
+  bottomGroups[packageName] = new ThemeVariableGroup(
+    packageName,
+    name,
+    description
+  );
   return bottomGroups[packageName];
 };
 
 /**Group of settings should never be instantiated manually use initSettings*/
-export class VariableGroup {
+export class ThemeVariableGroup {
   private pathID: string;
   private variables: {
     [key: string]: {
       name: string;
       desc: string;
       vars: { [key: string]: string };
+      type: keyof VariableType;
+      typeParams: VariableType[keyof VariableType];
+      example?: () => Element;
     };
   } = {};
-  private subGroups: { [key: string]: VariableGroup } = {};
+  private subGroups: { [key: string]: ThemeVariableGroup } = {};
   readonly name: string;
   readonly description: string;
 
-  private constructor(path: string, name: string, description: string) {
+  constructor(path: string, name: string, description: string) {
     this.pathID = path;
     this.name = name;
     this.description = description;
@@ -43,7 +57,7 @@ export class VariableGroup {
     if (id in this.subGroups) {
       throw new Error("Sub group already registered " + id);
     } else {
-      return (this.subGroups[id] = new VariableGroup(
+      return (this.subGroups[id] = new ThemeVariableGroup(
         this.pathID + "/" + id,
         name,
         description
@@ -57,7 +71,8 @@ export class VariableGroup {
    * @param description a description of what the variable is about formatted for user reading
    * @param light value for light mode
    * @param dark value for dark mode
-   * @param type type of variable for editing*/
+   * @param type type of variable for editing
+   * @param typeParams */
   makeVariable<K extends keyof VariableType>(
     id: string,
     name: string,
@@ -65,18 +80,20 @@ export class VariableGroup {
     light: string,
     dark: string,
     type: K,
-    typeParams: VariableType[K]
+    typeParams: VariableType[K],
+    example?: () => Element
   ) {
     if (id in this.variables) {
       throw new Error("Settings already registered " + id);
     }
-    type;
-    typeParams;
     let key = "--" + this.pathID + "/" + id;
     let variable = (this.variables[key] = {
       name,
       desc: description,
       vars: { [Themes.Light]: light, [Themes.Dark]: dark },
+      type,
+      typeParams,
+      example,
     });
     for (let i = 0; i < engines.length; i++) {
       //@ts-ignore
@@ -106,26 +123,23 @@ interface VariableType {
   /**Color variable */
   Color: undefined;
   /**Time variable */
-  Time:
-    | {
-        /**Minimum time in milliseconds */
-        min: number;
-        /**Maximum time in milliseconds */
-        max: number;
-      }
-    | undefined;
+  Time: {
+    /**Minimum time in milliseconds */
+    min: number;
+    /**Maximum time in milliseconds */
+    max: number;
+  };
   /**Angle variable */
-  Angle: { min: number; max: number } | undefined;
+  Angle: { min: number; max: number };
   /**Length variable*/
-  Length: { min: number; max: number } | undefined;
+  Length: { min: number; max: number };
   /**Number variable*/
-  Number: { min: number; max: number } | undefined;
+  Number: { min: number; max: number };
   /**Ratio*/
   Ratio:
     | {
         width: { min: number; max: number };
         height: { min: number; max: number };
       }
-    | number
-    | undefined;
+    | number;
 }

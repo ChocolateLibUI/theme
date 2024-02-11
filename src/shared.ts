@@ -1,6 +1,6 @@
 import { ThemeEngine } from "./engine";
-import { VariableGroup } from "./variables";
+import { ThemeVariableGroup } from "./variables";
 
 export let engines: ThemeEngine[] = [];
 
-export let bottomGroups: { [key: string]: VariableGroup } = {};
+export let bottomGroups: { [key: string]: ThemeVariableGroup } = {};
